@@ -10,7 +10,7 @@ interface ChatResponse {
   rating?: number;
 }
 
-interface ChatMessage {
+interface ChatMessageData {
   id: string;
   user: string;
   responses: ChatResponse[];
@@ -18,7 +18,7 @@ interface ChatMessage {
 }
 
 interface MessageListProps {
-  messages: ChatMessage[];
+  messages: ChatMessageData[];
   searchQuery: string;
   copiedId: string | null;
   onRateResponse: (messageId: string, responseId: string, rating: number) => void;
