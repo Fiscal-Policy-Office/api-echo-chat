@@ -1,16 +1,14 @@
 
+
 import React, { useState, useMemo } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
-import { Send, RefreshCw, Star, Copy, Check, Filter } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import ProjectSidebar from './ProjectSidebar';
 import ChatAnalytics from './ChatAnalytics';
+import MessageInput from './MessageInput';
+import MessageList from './MessageList';
 
 interface ChatResponse {
   id: string;
@@ -247,14 +245,6 @@ const MultiChatInterface = () => {
     }
   };
 
-  // Filter messages based on search query
-  const filteredMessages = messages.filter(message =>
-    message.user.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    message.responses.some(response => 
-      response.content.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-  );
-
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
@@ -296,135 +286,21 @@ const MultiChatInterface = () => {
               </div>
 
               <TabsContent value="chat" className="flex-1 flex flex-col px-4 pb-4 space-y-4">
-                {/* Input Section */}
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex gap-2">
-                      <Input
-                        value={inputMessage}
-                        onChange={(e) => setInputMessage(e.target.value)}
-                        placeholder="พิมพ์คำถามของคุณที่นี่..."
-                        onKeyPress={handleKeyPress}
-                        disabled={isLoading}
-                        className="flex-1"
-                      />
-                      <Button 
-                        onClick={handleSendMessage} 
-                        disabled={isLoading || !inputMessage.trim()}
-                        className="px-6"
-                      >
-                        {isLoading ? (
-                          <RefreshCw className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Send className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                <MessageInput
+                  inputMessage={inputMessage}
+                  setInputMessage={setInputMessage}
+                  onSendMessage={handleSendMessage}
+                  isLoading={isLoading}
+                  onKeyPress={handleKeyPress}
+                />
 
-                {/* Messages Section */}
-                <div className="flex-1 overflow-auto space-y-6">
-                  {filteredMessages.map((message) => (
-                    <Card key={message.id} className="w-full">
-                      <CardHeader>
-                        <CardTitle className="text-lg">
-                          <div className="flex items-center justify-between">
-                            <span>คำถาม: {message.user}</span>
-                            <Badge variant="outline">
-                              {message.timestamp.toLocaleTimeString('th-TH')}
-                            </Badge>
-                          </div>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        {/* ... keep existing code (Tabs and responses rendering) */}
-                        <Tabs defaultValue="0" className="w-full">
-                          <TabsList className="grid w-full grid-cols-3">
-                            {message.responses.map((response, index) => (
-                              <TabsTrigger key={response.id} value={index.toString()}>
-                                <div className="flex items-center gap-2">
-                                  {response.model}
-                                  {response.rating && (
-                                    <div className="flex">
-                                      {[...Array(5)].map((_, i) => (
-                                        <Star
-                                          key={i}
-                                          className={`h-3 w-3 ${
-                                            i < response.rating! ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
-                                          }`}
-                                        />
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                              </TabsTrigger>
-                            ))}
-                          </TabsList>
-                          
-                          {message.responses.map((response, index) => (
-                            <TabsContent key={response.id} value={index.toString()}>
-                              <Card>
-                                <CardContent className="p-4">
-                                  <div className="space-y-4">
-                                    <div className="flex items-center justify-between">
-                                      <Badge>{response.model}</Badge>
-                                      <div className="flex items-center gap-2">
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={() => handleCopyResponse(response.content, response.id)}
-                                        >
-                                          {copiedId === response.id ? (
-                                            <Check className="h-4 w-4" />
-                                          ) : (
-                                            <Copy className="h-4 w-4" />
-                                          )}
-                                        </Button>
-                                      </div>
-                                    </div>
-                                    
-                                    <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                                      {response.content}
-                                    </p>
-                                    
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-sm text-muted-foreground">ให้คะแนน:</span>
-                                      {[1, 2, 3, 4, 5].map((rating) => (
-                                        <Button
-                                          key={rating}
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() => handleRateResponse(message.id, response.id, rating)}
-                                        >
-                                          <Star
-                                            className={`h-4 w-4 ${
-                                              response.rating && rating <= response.rating
-                                                ? 'fill-yellow-400 text-yellow-400'
-                                                : 'text-gray-300'
-                                            }`}
-                                          />
-                                        </Button>
-                                      ))}
-                                    </div>
-                                  </div>
-                                </CardContent>
-                              </Card>
-                            </TabsContent>
-                          ))}
-                        </Tabs>
-                      </CardContent>
-                    </Card>
-                  ))}
-
-                  {filteredMessages.length === 0 && (
-                    <div className="text-center py-12">
-                      <p className="text-muted-foreground">
-                        {searchQuery ? 'ไม่พบผลการค้นหา' : 'เริ่มสนทนาโดยพิมพ์คำถามของคุณด้านบน'}
-                      </p>
-                    </div>
-                  )}
-                </div>
+                <MessageList
+                  messages={messages}
+                  searchQuery={searchQuery}
+                  copiedId={copiedId}
+                  onRateResponse={handleRateResponse}
+                  onCopyResponse={handleCopyResponse}
+                />
               </TabsContent>
 
               <TabsContent value="analytics" className="flex-1 p-4">
