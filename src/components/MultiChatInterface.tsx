@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -71,7 +72,13 @@ const MultiChatInterface = () => {
     const topRatedResponses = allResponses
       .filter(r => r.rating && r.rating >= 4)
       .sort((a, b) => (b.rating || 0) - (a.rating || 0))
-      .slice(0, 10);
+      .slice(0, 10)
+      .map(r => ({
+        model: r.model,
+        rating: r.rating!,
+        content: r.content,
+        timestamp: r.timestamp
+      }));
 
     return {
       totalMessages: allMessages.length,
