@@ -1,6 +1,5 @@
-
-
-import React, { useState, useMemo } from 'react';
+import * as React from 'react';
+import { useState, useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { useToast } from '@/hooks/use-toast';
@@ -245,70 +244,81 @@ const MultiChatInterface = () => {
     }
   };
 
+  const handleDeleteProject = (projectId: string) => {
+    const updatedProjects = projects.filter(p => p.id !== projectId);
+    setProjects(updatedProjects);
+    
+    if (currentProjectId === projectId) {
+      setCurrentProjectId(updatedProjects[0]?.id || null);
+    }
+    
+    toast({
+      title: "Project deleted",
+      description: "The project has been successfully deleted.",
+    });
+  };
+
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
-        <ProjectSidebar
-          projects={projects.map(p => ({
-            id: p.id,
-            name: p.name,
-            messageCount: p.messages.length,
-            avgRating: p.messages.length > 0 
-              ? p.messages.flatMap(m => m.responses)
-                  .filter(r => r.rating)
-                  .reduce((sum, r, _, arr) => sum + (r.rating || 0) / arr.length, 0)
-              : 0,
-            lastUpdated: p.lastUpdated
-          }))}
-          currentProject={currentProjectId}
-          onSelectProject={handleSelectProject}
-          onCreateProject={handleCreateProject}
-          onExportData={handleExportData}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-        />
-        
-        <SidebarInset>
-          <div className="flex flex-col h-screen">
-            <div className="flex items-center gap-2 p-4 border-b">
-              <SidebarTrigger />
-              <h1 className="text-xl font-bold">
-                Multi-LLM Chat System
-              </h1>
+      <div className="flex h-screen">
+        <div className="flex-1 flex flex-col">
+          <Tabs defaultValue="chat" className="flex-1" value={activeTab} onValueChange={setActiveTab}>
+            <div className="border-b px-4 py-2">
+              <TabsList>
+                <TabsTrigger value="chat">Chat</TabsTrigger>
+                <TabsTrigger value="analytics">Analytics</TabsTrigger>
+              </TabsList>
             </div>
+            
+            <TabsContent value="chat" className="flex-1 p-4">
+              <MessageList
+                messages={messages}
+                onRatingChange={handleRateResponse}
+                onCopy={handleCopyResponse}
+                copiedId={copiedId}
+                searchQuery={searchQuery}
+              />
+              <MessageInput
+                value={inputMessage}
+                onChange={setInputMessage}
+                onSubmit={handleSendMessage}
+                isLoading={isLoading}
+                models={models}
+                onKeyPress={handleKeyPress}
+              />
+            </TabsContent>
+            
+            <TabsContent value="analytics" className="p-4">
+              <ChatAnalytics {...analytics} />
+            </TabsContent>
+          </Tabs>
+        </div>
 
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-              <div className="px-4 pt-4">
-                <TabsList>
-                  <TabsTrigger value="chat">แชท</TabsTrigger>
-                  <TabsTrigger value="analytics">สถิติ</TabsTrigger>
-                </TabsList>
-              </div>
-
-              <TabsContent value="chat" className="flex-1 flex flex-col px-4 pb-4 space-y-4">
-                <MessageInput
-                  inputMessage={inputMessage}
-                  setInputMessage={setInputMessage}
-                  onSendMessage={handleSendMessage}
-                  isLoading={isLoading}
-                  onKeyPress={handleKeyPress}
-                />
-
-                <MessageList
-                  messages={messages}
-                  searchQuery={searchQuery}
-                  copiedId={copiedId}
-                  onRateResponse={handleRateResponse}
-                  onCopyResponse={handleCopyResponse}
-                />
-              </TabsContent>
-
-              <TabsContent value="analytics" className="flex-1 p-4">
-                <ChatAnalytics {...analytics} />
-              </TabsContent>
-            </Tabs>
+        {/* Responsive Sidebar */}
+        <SidebarInset className="w-[300px] border-l bg-background">
+          <div className="p-4 h-full">
+            <ProjectSidebar
+              projects={projects}
+              currentProjectId={currentProjectId}
+              onCreateProject={handleCreateProject}
+              onSelectProject={handleSelectProject}
+              onDeleteProject={handleDeleteProject}
+              onSearch={setSearchQuery}
+              searchQuery={searchQuery}
+            />
           </div>
         </SidebarInset>
+
+        {/* Sidebar Toggle Button */}
+        <SidebarTrigger asChild>
+          <button className="fixed right-4 top-4 z-50 rounded-full p-2 bg-primary text-primary-foreground hover:bg-primary/90 md:hidden">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+        </SidebarTrigger>
       </div>
     </SidebarProvider>
   );
